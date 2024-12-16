@@ -1,0 +1,264 @@
+substitutions:
+  modbus_tx_pin: GPIO16
+  modbus_rx_pin: GPIO17
+  modbus_settings_skipped_updates: "60"
+
+# modbus configuration
+uart:
+  id: mod_bus
+  tx_pin: "${modbus_tx_pin}"
+  rx_pin: "${modbus_rx_pin}"
+  baud_rate: 4800
+  stop_bits: 1
+
+modbus:
+  id: hrv_modbus
+  # flow_control_pin: GPIO16
+
+modbus_controller:
+  - id: hrv_controller
+    address: 0x01
+    modbus_id: hrv_modbus
+    setup_priority: -10
+    update_interval: "2s"
+    command_throttle: "200ms"
+
+switch:
+  - platform: modbus_controller
+    modbus_controller_id: hrv_controller
+    name: "Ventilation"
+    id: "ventilation"
+    register_type: holding
+    address: 9
+    bitmask: 1
+    icon: "mdi:toggle-switch"
+
+number:
+  - platform: modbus_controller # 2 By-Pass Open Temperature
+    modbus_controller_id: hrv_controller
+    name: "By-Pass Open Temperature"
+    id: "hrv_bypass_open_temperature"
+    skip_updates: ${modbus_settings_skipped_updates}
+    address: 2
+    unit_of_measurement: "°C"
+    device_class: temperature
+    min_value: 5
+    max_value: 30
+    entity_category: config
+
+  - platform: modbus_controller # 3 By-Pass Open Interval
+    modbus_controller_id: hrv_controller
+    name: "By-Pass Open Interval"
+    id: "hrv_bypass_open_interval"
+    skip_updates: ${modbus_settings_skipped_updates}
+    address: 3
+    unit_of_measurement: "°C"
+    device_class: temperature
+    min_value: 2
+    max_value: 15
+    entity_category: config
+
+  - platform: modbus_controller # 4 defrosting time interval
+    modbus_controller_id: hrv_controller
+    name: "Defrosting Interval"
+    id: "hrv_defrosting_interval"
+    skip_updates: ${modbus_settings_skipped_updates}
+    address: 4
+    unit_of_measurement: "minutes"
+    device_class: duration
+    min_value: 15
+    max_value: 99
+    entity_category: config
+
+  - platform: modbus_controller # 5 defrosting temperature
+    modbus_controller_id: hrv_controller
+    name: "Defrosting Temperature"
+    id: "hrv_defrosting_temperature"
+    skip_updates: ${modbus_settings_skipped_updates}
+    address: 5
+    unit_of_measurement: "°C"
+    device_class: temperature
+    min_value: -9
+    max_value: 5
+    entity_category: config
+    lambda: |-
+      return x - 40;
+    write_lambda: |-
+      return x + 40;
+
+  - platform: modbus_controller # 4 defrosting duration
+    modbus_controller_id: hrv_controller
+    name: "Defrosting Duration"
+    id: "hrv_defrosting_duration"
+    skip_updates: ${modbus_settings_skipped_updates}
+    address: 6
+    unit_of_measurement: "minutes"
+    device_class: duration
+    min_value: 2
+    max_value: 20
+    entity_category: config
+
+  - platform: modbus_controller # 10 Fan in speed
+    modbus_controller_id: hrv_controller
+    name: "Fan In Speed"
+    id: "hrv_fan_in_speed"
+    address: 10
+    min_value: 1
+    max_value: 10
+    lambda: |-
+      if (x >= 8) {
+        return x - 4;
+      } else if (x == 5) {
+        return 3;
+      } else if (x == 3) {
+        return 2;
+      } else if (x == 2) {
+        return 1;
+      } else {
+        return 0;
+      }
+    write_lambda: |-
+      if (x >= 4) {
+        return x + 4;
+      } else if (x == 3) {
+        return 5;
+      } else if (x == 2) {
+        return 3;
+      } else if (x == 1) {
+        return 2;
+      } else {
+        return 0;
+      }
+
+  - platform: modbus_controller # 11 Fan out speed
+    modbus_controller_id: hrv_controller
+    name: "Fan Out Speed"
+    id: "hrv_fan_out_speed"
+    address: 11
+    min_value: 1
+    max_value: 10
+    lambda: |-
+      if (x >= 8) {
+        return x - 4;
+      } else if (x == 5) {
+        return 3;
+      } else if (x == 3) {
+        return 2;
+      } else if (x == 2) {
+        return 1;
+      } else {
+        return 0;
+      }
+    write_lambda: |-
+      if (x >= 4) {
+        return x + 4;
+      } else if (x == 3) {
+        return 5;
+      } else if (x == 2) {
+        return 3;
+      } else if (x == 1) {
+        return 2;
+      } else {
+        return 0;
+      }
+
+sensor:
+  - platform: modbus_controller # 12 Return Air Temperature
+    modbus_controller_id: hrv_controller
+    name: "Return Air Temperature"
+    id: "hrv_return_air_temperature"
+    address: 12
+    register_type: holding
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    device_class: temperature
+    state_class: measurement
+    filters:
+      - offset: -40
+
+  - platform: modbus_controller # 13 Fresh Air Temperature
+    modbus_controller_id: hrv_controller
+    name: "Fresh Air Temperature"
+    id: "hrv_fresh_air_temperature"
+    address: 13
+    register_type: holding
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    device_class: temperature
+    state_class: measurement
+    filters:
+      - offset: -40
+
+  - platform: modbus_controller # 14 Supply Air Temperature
+    modbus_controller_id: hrv_controller
+    name: "Supply Air Temperature"
+    id: "hrv_supply_air_temperature"
+    address: 14
+    register_type: holding
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    device_class: temperature
+    state_class: measurement
+    filters:
+      - offset: -40
+
+  - platform: modbus_controller # 15 Exhaust Air Temperature
+    modbus_controller_id: hrv_controller
+    name: "Exhaust Air Temperature"
+    id: "hrv_exhaust_air_temperature"
+    address: 15
+    register_type: holding
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    device_class: temperature
+    state_class: measurement
+    filters:
+      - offset: -40
+
+binary_sensor:
+  - platform: modbus_controller # 18 Fire Alarm State
+    modbus_controller_id: hrv_controller
+    name: "Fire Alarm"
+    id: "hrv_fire_alarm"
+    register_type: holding
+    address: 18
+    bitmask: 1
+    icon: "mdi:fire-alert"
+    device_class: tamper
+
+  - platform: modbus_controller # 18 By-Pass State
+    modbus_controller_id: hrv_controller
+    name: "By-Pass"
+    id: "hrv_bypass_state"
+    register_type: holding
+    address: 18
+    bitmask: 2
+    icon: "mdi:gate"
+    device_class: door
+
+  - platform: modbus_controller # 18 Defrosting State
+    modbus_controller_id: hrv_controller
+    name: "Defrosting"
+    id: "hrv_defrosting"
+    register_type: holding
+    address: 18
+    bitmask: 8
+    icon: "mdi:snowflake-melt"
+    device_class: running
+
+select:
+  - platform: modbus_controller            #243 Select Energy Patern
+    use_write_multiple: true
+    modbus_controller_id: hrv_controller
+    id: "hrv_model"
+    name: "HRV Model"
+    skip_updates: ${modbus_settings_skipped_updates}
+    address: 21
+    value_type: U_WORD
+    entity_category: config
+    optionsmap:
+      "CH-HRV1.5KDC": 6
+      "CH-HRV2.5KDC": 5
+      "CH-HRV3.5KDC": 4
+      "CH-HRV5KDC": 3
+      "CH-HRV6.5KDC": 0

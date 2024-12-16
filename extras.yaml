@@ -1,0 +1,29 @@
+# This contains the extra configuration for the Cooper&Hunter HRV like:
+# - Additional external switch to enable the By-Pass manually
+# - DHT22 sensor to monitor the humidity and temperature for Return Air
+substitutions:
+  extras_switch_pin: GPIO5
+  extras_dht_pin: GPIO4
+
+switch:
+  - platform: gpio
+    name: "By-Pass"
+    id: "hrv_bypass"
+    pin:
+      number: ${extras_switch_pin}
+      inverted: true
+      mode:
+        output: true
+        open_drain: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    icon: "mdi:gate"
+
+sensor:
+  - platform: dht
+    pin: ${extras_dht_pin}
+    model: AM2302
+    temperature:
+      name: "Temperature"
+    humidity:
+      name: "Humidity"
+    update_interval: 60s
